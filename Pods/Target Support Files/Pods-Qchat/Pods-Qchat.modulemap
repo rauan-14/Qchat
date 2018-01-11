@@ -1,0 +1,6 @@
+framework module Pods_Qchat {
+  umbrella header "Pods-Qchat-umbrella.h"
+
+  export *
+  module * { export * }
+}
