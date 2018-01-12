@@ -9,7 +9,7 @@
 import UIKit
 import Firebase
 
-class ChatTableViewController: UIViewController, UITableViewDelegate, UITableViewDataSource {
+class ChatTableViewController: UIViewController, UITableViewDelegate, UITableViewDataSource, UITextFieldDelegate {
     
     
     
@@ -25,6 +25,7 @@ class ChatTableViewController: UIViewController, UITableViewDelegate, UITableVie
     
     // MARK: Firebase/Database
     
+    @IBOutlet weak var bottomConstraint: NSLayoutConstraint!
     
     @IBOutlet weak var chatTableView: UITableView! {
         didSet {
@@ -83,9 +84,43 @@ class ChatTableViewController: UIViewController, UITableViewDelegate, UITableVie
         navigationController?.navigationBar.tintColor = .white
         let textAttributes = [NSAttributedStringKey.foregroundColor:UIColor.white]
         navigationController?.navigationBar.titleTextAttributes = textAttributes
+        setupKeyObservers()
+        addGestureRecognizer()
         fetchMessages()
     }
-
+    
+    
+    func addGestureRecognizer() {
+        let tapRecognizer = UITapGestureRecognizer(target: self, action: #selector(handleTap))
+        chatTableView.addGestureRecognizer(tapRecognizer)
+    }
+    @objc func handleTap(_ tapGesture: UITapGestureRecognizer) {
+        if tapGesture.state == .ended {
+            messageTextField.resignFirstResponder()
+        }
+    }
+    
+    override func viewDidDisappear(_ animated: Bool) {
+        super.viewDidDisappear(animated)
+        NotificationCenter.default.removeObserver(self)
+    }
+    
+    func setupKeyObservers() {
+        NotificationCenter.default.addObserver(self, selector: #selector(handleKeyboardWillShow), name: NSNotification.Name.UIKeyboardWillShow, object: nil)
+        NotificationCenter.default.addObserver(self, selector: #selector(handleKeyboardWillHide), name: NSNotification.Name.UIKeyboardWillHide, object: nil)
+    }
+    
+    @objc func handleKeyboardWillShow(_ notification: NSNotification) {
+        let keyboardSize = notification.userInfo?[UIKeyboardFrameEndUserInfoKey] as? NSValue
+        if let height = keyboardSize?.cgRectValue.size.height {
+            bottomConstraint.constant = -height
+        }
+    }
+    
+    @objc func handleKeyboardWillHide(_ notification: Notification) {
+        bottomConstraint.constant = 0
+    }
+    
     override func viewWillLayoutSubviews() {
         chatTableView.reloadData()
     }
@@ -135,6 +170,8 @@ class ChatTableViewController: UIViewController, UITableViewDelegate, UITableVie
     func tableView(_ tableView: UITableView, willSelectRowAt indexPath: IndexPath) -> IndexPath? {
         return nil
     }
+
+    
     
     func showLastMessages() {
         if chatTableView.numberOfRows(inSection: 0) > 1 {
